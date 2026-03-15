@@ -16,7 +16,7 @@
       --bg:#0D0D0D;--surface:#1A1A1A;--surface2:#222;
       --gold:#C9A96E;--gold2:#E8C98A;
       --white:#F5F4F0;--muted:#666;
-      --red:#E05B5B;--amber:#E09A3A;--green:#6DBF7E;
+      --red:#E05B5B;--amber:#E09A3A;--green:#6DBF7E;--blue:#5B9EE0;
       --radius:13px;
       --font:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
     }
@@ -61,6 +61,8 @@
     }
     .u-chip.today{border-color:var(--red);color:var(--red)}
     .u-chip.today.sel{background:var(--red);color:#fff}
+    .u-chip.tomorrow{border-color:var(--blue);color:var(--blue)}
+    .u-chip.tomorrow.sel{background:var(--blue);color:#fff}
     .u-chip.week{border-color:var(--amber);color:var(--amber)}
     .u-chip.week.sel{background:var(--amber);color:#fff}
     .u-chip.whenever{border-color:#333;color:#555}
@@ -105,6 +107,7 @@
     }
     .group-label.red{color:var(--red)}
     .group-label.amber{color:var(--amber)}
+    .group-label.blue{color:var(--blue)}
     .group-label.grey{color:#333}
     .group{margin-bottom:18px}
     .task{
@@ -127,6 +130,7 @@
       padding:2px 7px;flex-shrink:0;margin-top:2px
     }
     .badge-today{background:#2e1010;color:var(--red)}
+    .badge-tomorrow{background:#0e1a2e;color:var(--blue)}
     .badge-week{background:#241a08;color:var(--amber)}
     .badge-whenever{background:#1a1a1a;color:#444}
     .empty-state{text-align:center;padding:40px 20px;color:#2a2a2a;font-size:14px;line-height:1.7}
@@ -188,6 +192,7 @@
   <div class="field-label" style="margin-top:14px">When does it need to happen?</div>
   <div class="urgency-row">
     <div class="u-chip today" id="chip-today" onclick="selectUrgency('today')">TODAY</div>
+    <div class="u-chip tomorrow" id="chip-tomorrow" onclick="selectUrgency('tomorrow')">TOMORROW</div>
     <div class="u-chip week" id="chip-week" onclick="selectUrgency('week')">THIS WEEK</div>
     <div class="u-chip whenever" id="chip-whenever" onclick="selectUrgency('whenever')">WHENEVER</div>
   </div>
@@ -269,15 +274,17 @@ function renderList(){
   const container = document.getElementById('taskList');
 
   const today = tasks.filter(t=>t.urgency==='today');
+  const tomorrow = tasks.filter(t=>t.urgency==='tomorrow');
   const week = tasks.filter(t=>t.urgency==='week');
   const whenever = tasks.filter(t=>t.urgency==='whenever');
 
   let html = '';
   if(today.length) html += renderGroup('🔴', 'Today', today, 'red', 'badge-today');
+  if(tomorrow.length) html += renderGroup('🔵', 'Tomorrow', tomorrow, 'blue', 'badge-tomorrow');
   if(week.length)  html += renderGroup('🟡', 'This Week', week, 'amber', 'badge-week');
   if(whenever.length) html += renderGroup('⚪', 'Whenever', whenever, 'grey', 'badge-whenever');
 
-  if(!today.length && !week.length && !whenever.length &&
+  if(!today.length && !tomorrow.length && !week.length && !whenever.length &&
      (!STS_AUTO_DATA.checkins || !STS_AUTO_DATA.checkins.length ||
       STS_AUTO_DATA.date !== TODAY_KEY())){
     html = `<div class="empty-state"><div class="big">✨</div>All clear for now.<br>Use Capture to add something.</div>`;
@@ -366,7 +373,7 @@ function renderDone(){
 /* ─── CAPTURE ─── */
 function selectUrgency(u){
   selectedUrgency = (selectedUrgency===u) ? null : u;
-  ['today','week','whenever'].forEach(x=>{
+  ['today','tomorrow','week','whenever'].forEach(x=>{
     document.getElementById('chip-'+x).classList.toggle('sel', x===selectedUrgency);
   });
 }
@@ -388,7 +395,7 @@ function addTask(){
 
   input.value='';
   selectedUrgency=null;
-  ['today','week','whenever'].forEach(x=>document.getElementById('chip-'+x).classList.remove('sel'));
+  ['today','tomorrow','week','whenever'].forEach(x=>document.getElementById('chip-'+x).classList.remove('sel'));
   switchTab('list');
 }
 
