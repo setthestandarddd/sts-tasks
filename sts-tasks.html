@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="STS Tasks"/>
+  <meta name="theme-color" content="#0D0D0D"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icon-192.png"/>
+  <title>STS Tasks</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    :root{
+      --bg:#0D0D0D;--surface:#1A1A1A;--surface2:#222;
+      --gold:#C9A96E;--gold2:#E8C98A;
+      --white:#F5F4F0;--muted:#666;
+      --red:#E05B5B;--amber:#E09A3A;--green:#6DBF7E;
+      --radius:13px;
+      --font:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);overflow:hidden}
+    body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
+
+    /* ── HEADER ── */
+    .header{
+      padding:env(safe-area-inset-top,14px) 20px 12px;
+      padding-top:max(env(safe-area-inset-top),14px);
+      background:var(--bg);border-bottom:1px solid #1e1e1e;flex-shrink:0
+    }
+    .header-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:2px}
+    .header-title{font-size:22px;font-weight:800;color:var(--white)}
+    .header-sub{font-size:12px;color:var(--muted);margin-top:1px}
+
+    /* ── TAB BAR ── */
+    .tabs{display:flex;background:var(--bg);border-bottom:1px solid #1e1e1e;flex-shrink:0}
+    .tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);position:relative;cursor:pointer}
+    .tab.active{color:var(--gold)}
+    .tab.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--gold);border-radius:2px}
+    .tab-badge{background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+
+    /* ── SCREENS ── */
+    .screen{flex:1;overflow-y:auto;padding:16px 16px 40px;display:none}
+    .screen.active{display:block}
+
+    /* ── CAPTURE ── */
+    .field-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px}
+    textarea.dump{
+      width:100%;background:var(--surface2);border:1.5px solid #2a2a2a;
+      border-radius:var(--radius);color:var(--white);font-family:var(--font);
+      font-size:15px;padding:14px;resize:none;height:110px;outline:none;line-height:1.55
+    }
+    textarea.dump::placeholder{color:#3a3a3a}
+    textarea.dump:focus{border-color:var(--gold)}
+    .urgency-row{display:flex;gap:8px;margin:14px 0}
+    .u-chip{
+      flex:1;text-align:center;padding:11px 4px;border-radius:10px;
+      font-size:11px;font-weight:800;letter-spacing:0.5px;border:1.5px solid transparent;
+      cursor:pointer;transition:all .15s
+    }
+    .u-chip.today{border-color:var(--red);color:var(--red)}
+    .u-chip.today.sel{background:var(--red);color:#fff}
+    .u-chip.week{border-color:var(--amber);color:var(--amber)}
+    .u-chip.week.sel{background:var(--amber);color:#fff}
+    .u-chip.whenever{border-color:#333;color:#555}
+    .u-chip.whenever.sel{background:#333;color:var(--white)}
+    .add-btn{
+      width:100%;padding:14px;background:var(--gold);color:#0a0a0a;
+      border:none;border-radius:var(--radius);font-family:var(--font);
+      font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer
+    }
+    .add-btn:active{opacity:.85}
+
+    /* ── CHECK-IN BLOCK ── */
+    .checkin-block{
+      background:linear-gradient(135deg,#181408,#161614);
+      border:1px solid #2a2210;border-radius:var(--radius);
+      padding:14px;margin-bottom:16px
+    }
+    .checkin-block-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .checkin-block-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700}
+    .checkin-count{font-size:12px;color:var(--muted)}
+    .checkin-pills{display:flex;flex-wrap:wrap;gap:6px}
+    .c-pill{
+      display:inline-flex;align-items:center;gap:5px;
+      background:#1c1a10;border:1px solid #2a2210;
+      border-radius:20px;padding:5px 10px;
+      font-size:12px;color:var(--gold2);font-weight:500;cursor:pointer;
+      transition:all .2s
+    }
+    .c-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+    .c-pill.submitted .dot{background:var(--green)}
+    .c-pill.submitted{border-color:#1a3020;background:#101a12}
+    .c-pill.submitted .pill-name{color:var(--green)}
+    .c-pill.processed{opacity:.3}
+    .c-pill.processed .dot{background:#444}
+    .checkin-empty{font-size:13px;color:#333;padding:4px 0}
+    .checkin-updated{font-size:10px;color:#2a2a2a;margin-top:8px;text-align:right}
+
+    /* ── TASK ITEMS ── */
+    .group-label{
+      font-size:10px;letter-spacing:2px;text-transform:uppercase;
+      font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px
+    }
+    .group-label.red{color:var(--red)}
+    .group-label.amber{color:var(--amber)}
+    .group-label.grey{color:#333}
+    .group{margin-bottom:18px}
+    .task{
+      background:var(--surface);border-radius:var(--radius);
+      padding:12px 14px;margin-bottom:7px;
+      display:flex;align-items:flex-start;gap:11px;
+      border:1px solid #1e1e1e;cursor:pointer;transition:opacity .2s
+    }
+    .task.done{opacity:.3}
+    .task-circle{
+      width:21px;height:21px;border-radius:50%;border:2px solid #333;
+      flex-shrink:0;margin-top:1px;display:flex;align-items:center;
+      justify-content:center;font-size:10px;color:#0a0a0a;transition:all .2s
+    }
+    .task.done .task-circle{background:var(--gold);border-color:var(--gold)}
+    .task-text{font-size:14px;font-weight:500;line-height:1.45;color:var(--white);flex:1}
+    .task.done .task-text{text-decoration:line-through;color:var(--muted)}
+    .task-badge{
+      font-size:10px;font-weight:800;border-radius:5px;
+      padding:2px 7px;flex-shrink:0;margin-top:2px
+    }
+    .badge-today{background:#2e1010;color:var(--red)}
+    .badge-week{background:#241a08;color:var(--amber)}
+    .badge-whenever{background:#1a1a1a;color:#444}
+    .empty-state{text-align:center;padding:40px 20px;color:#2a2a2a;font-size:14px;line-height:1.7}
+    .empty-state .big{font-size:32px;margin-bottom:10px}
+
+    /* ── DONE SCREEN ── */
+    .done-header{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#2a2a2a;font-weight:600;margin-bottom:12px}
+
+    /* ── DATA STATUS ── */
+    .data-status{
+      background:#111;border:1px solid #1e1e1e;border-radius:10px;
+      padding:10px 13px;margin-bottom:14px;
+      display:flex;align-items:center;gap:8px
+    }
+    .data-status .status-dot{width:7px;height:7px;border-radius:50%;background:#2a2a2a;flex-shrink:0}
+    .data-status.live .status-dot{background:var(--green)}
+    .data-status.stale .status-dot{background:var(--amber);animation:pulse 2s infinite}
+    .data-status-text{font-size:12px;color:var(--muted)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-eyebrow">Set The Standard</div>
+  <div class="header-title" id="headerTitle">My Tasks</div>
+  <div class="header-sub" id="headerSub">Loading…</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="list" onclick="switchTab('list')">
+    My List <span class="tab-badge" id="openBadge" style="display:none"></span>
+  </div>
+  <div class="tab" data-tab="capture" onclick="switchTab('capture')">Capture</div>
+  <div class="tab" data-tab="done" onclick="switchTab('done')">Done</div>
+</div>
+
+<!-- MY LIST SCREEN -->
+<div class="screen active" id="screen-list">
+  <!-- check-ins block -->
+  <div class="checkin-block" id="checkinBlock" style="display:none">
+    <div class="checkin-block-header">
+      <div class="checkin-block-title">📅 Today's Check-ins</div>
+      <div class="checkin-count" id="checkinCount"></div>
+    </div>
+    <div class="checkin-pills" id="checkinPills"></div>
+    <div class="checkin-updated" id="checkinUpdated"></div>
+  </div>
+
+  <!-- tasks -->
+  <div id="taskList"></div>
+</div>
+
+<!-- CAPTURE SCREEN -->
+<div class="screen" id="screen-capture">
+  <div class="field-label">What needs doing?</div>
+  <textarea class="dump" id="dumpInput" placeholder="Dump it here — client request, follow-up, whatever's on your mind…"></textarea>
+
+  <div class="field-label" style="margin-top:14px">When does it need to happen?</div>
+  <div class="urgency-row">
+    <div class="u-chip today" id="chip-today" onclick="selectUrgency('today')">TODAY</div>
+    <div class="u-chip week" id="chip-week" onclick="selectUrgency('week')">THIS WEEK</div>
+    <div class="u-chip whenever" id="chip-whenever" onclick="selectUrgency('whenever')">WHENEVER</div>
+  </div>
+
+  <button class="add-btn" onclick="addTask()">+ Add to List</button>
+</div>
+
+<!-- DONE SCREEN -->
+<div class="screen" id="screen-done">
+  <div id="doneList"></div>
+</div>
+
+<script>
+/* ===== STS-AUTO-DATA: DO NOT EDIT MANUALLY ===== */
+const STS_AUTO_DATA = {
+  "date": null,
+  "checkins": [],
+  "formSubmissions": [],
+  "lateTasks": [],
+  "lastUpdated": null
+};
+/* ===== END STS-AUTO-DATA ===== */
+
+/* ─── STATE ─── */
+let selectedUrgency = null;
+const TODAY_KEY = () => new Date().toISOString().slice(0,10);
+
+function loadTasks(){ return JSON.parse(localStorage.getItem('sts_tasks')||'[]'); }
+function saveTasks(t){ localStorage.setItem('sts_tasks', JSON.stringify(t)); }
+function loadProcessed(){ return JSON.parse(localStorage.getItem('sts_ci_'+TODAY_KEY())||'[]'); }
+function saveProcessed(p){ localStorage.setItem('sts_ci_'+TODAY_KEY(), JSON.stringify(p)); }
+
+/* ─── INIT ─── */
+function init(){
+  updateHeader();
+  ingestAutoData();
+  renderList();
+  renderDone();
+}
+
+function updateHeader(){
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('headerSub').textContent =
+    days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()];
+}
+
+/* ─── INGEST AUTO DATA ─── */
+function ingestAutoData(){
+  if(!STS_AUTO_DATA.date) return;
+  const today = TODAY_KEY();
+  if(STS_AUTO_DATA.date !== today) return;
+
+  // Ingest late tasks from yesterday
+  const lateKey = 'sts_late_ingested_'+today;
+  if(STS_AUTO_DATA.lateTasks && STS_AUTO_DATA.lateTasks.length && !localStorage.getItem(lateKey)){
+    const tasks = loadTasks();
+    STS_AUTO_DATA.lateTasks.forEach(lt => {
+      tasks.push({id:'lt_'+Date.now()+'_'+Math.random(),text:lt,urgency:'today',created:new Date().toISOString(),completed:false,completedAt:null});
+    });
+    saveTasks(tasks);
+    localStorage.setItem(lateKey,'1');
+  }
+}
+
+/* ─── TABS ─── */
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id==='screen-'+tab));
+  if(tab==='list') renderList();
+  if(tab==='done') renderDone();
+}
+
+/* ─── RENDER LIST ─── */
+function renderList(){
+  renderCheckins();
+  const tasks = loadTasks().filter(t=>!t.completed);
+  const container = document.getElementById('taskList');
+
+  const today = tasks.filter(t=>t.urgency==='today');
+  const week = tasks.filter(t=>t.urgency==='week');
+  const whenever = tasks.filter(t=>t.urgency==='whenever');
+
+  let html = '';
+  if(today.length) html += renderGroup('🔴', 'Today', today, 'red', 'badge-today');
+  if(week.length)  html += renderGroup('🟡', 'This Week', week, 'amber', 'badge-week');
+  if(whenever.length) html += renderGroup('⚪', 'Whenever', whenever, 'grey', 'badge-whenever');
+
+  if(!today.length && !week.length && !whenever.length &&
+     (!STS_AUTO_DATA.checkins || !STS_AUTO_DATA.checkins.length ||
+      STS_AUTO_DATA.date !== TODAY_KEY())){
+    html = `<div class="empty-state"><div class="big">✨</div>All clear for now.<br>Use Capture to add something.</div>`;
+  }
+  container.innerHTML = html;
+
+  // Update badge
+  const count = tasks.length;
+  const badge = document.getElementById('openBadge');
+  badge.textContent = count;
+  badge.style.display = count ? 'inline' : 'none';
+}
+
+function renderGroup(emoji, label, tasks, colorClass, badgeClass){
+  return `<div class="group">
+    <div class="group-label ${colorClass}">${emoji} ${label}</div>
+    ${tasks.map(t=>`
+      <div class="task" onclick="toggleTask('${t.id}')">
+        <div class="task-circle">${t.completed?'✓':''}</div>
+        <div class="task-text">${escHtml(t.text)}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ─── RENDER CHECK-INS ─── */
+function renderCheckins(){
+  const block = document.getElementById('checkinBlock');
+  const today = TODAY_KEY();
+
+  if(!STS_AUTO_DATA.checkins || !STS_AUTO_DATA.checkins.length || STS_AUTO_DATA.date !== today){
+    block.style.display='none';
+    return;
+  }
+
+  block.style.display='block';
+  const processed = loadProcessed();
+  const submissions = STS_AUTO_DATA.formSubmissions||[];
+  const checkins = STS_AUTO_DATA.checkins;
+
+  document.getElementById('checkinCount').textContent = checkins.length+' clients';
+
+  const pills = checkins.map(ci=>{
+    const name = typeof ci === 'string' ? ci : ci.name;
+    const isProcessed = processed.includes(name);
+    const isSubmitted = submissions.includes(name);
+    return `<div class="c-pill ${isSubmitted?'submitted':''} ${isProcessed?'processed':''}"
+      onclick="toggleCheckin('${name.replace(/'/g,"\\'")}')">
+      <div class="dot"></div>
+      <span class="pill-name">${escHtml(name)}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('checkinPills').innerHTML = pills;
+
+  if(STS_AUTO_DATA.lastUpdated){
+    const d = new Date(STS_AUTO_DATA.lastUpdated);
+    document.getElementById('checkinUpdated').textContent =
+      'Updated '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+function toggleCheckin(name){
+  const p = loadProcessed();
+  const idx = p.indexOf(name);
+  if(idx===-1) p.push(name); else p.splice(idx,1);
+  saveProcessed(p);
+  renderCheckins();
+}
+
+/* ─── RENDER DONE ─── */
+function renderDone(){
+  const done = loadTasks().filter(t=>t.completed).reverse();
+  const container = document.getElementById('doneList');
+  if(!done.length){
+    container.innerHTML=`<div class="empty-state"><div class="big">🎯</div>Nothing done yet today.<br>Check things off to see them here.</div>`;
+    return;
+  }
+  container.innerHTML = `<div class="done-header">Completed</div>`+
+    done.map(t=>`
+      <div class="task done" onclick="toggleTask('${t.id}')">
+        <div class="task-circle">✓</div>
+        <div class="task-text">${escHtml(t.text)}</div>
+      </div>`).join('');
+}
+
+/* ─── CAPTURE ─── */
+function selectUrgency(u){
+  selectedUrgency = (selectedUrgency===u) ? null : u;
+  ['today','week','whenever'].forEach(x=>{
+    document.getElementById('chip-'+x).classList.toggle('sel', x===selectedUrgency);
+  });
+}
+
+function addTask(){
+  const input = document.getElementById('dumpInput');
+  const text = input.value.trim();
+  if(!text){ input.focus(); return; }
+  if(!selectedUrgency){ alert('Tap how urgent this is first.'); return; }
+
+  const tasks = loadTasks();
+  tasks.push({
+    id:'t_'+Date.now()+'_'+Math.random().toString(36).slice(2),
+    text, urgency: selectedUrgency,
+    created: new Date().toISOString(),
+    completed: false, completedAt: null
+  });
+  saveTasks(tasks);
+
+  input.value='';
+  selectedUrgency=null;
+  ['today','week','whenever'].forEach(x=>document.getElementById('chip-'+x).classList.remove('sel'));
+  switchTab('list');
+}
+
+/* ─── TOGGLE TASK ─── */
+function toggleTask(id){
+  const tasks = loadTasks();
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.completed = !t.completed;
+  t.completedAt = t.completed ? new Date().toISOString() : null;
+  saveTasks(tasks);
+  renderList();
+  renderDone();
+}
+
+/* ─── UTILS ─── */
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
+
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js'); }
+</script>
+</body>
+</html>
